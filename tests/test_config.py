@@ -20,6 +20,7 @@ def config_dir(tmpdir_factory):
     cfg.set("twtxt", "use_cache", "False")
     cfg.set("twtxt", "porcelain", "True")
     cfg.set("twtxt", "character_limit", "150")
+    cfg.set("twtxt", "disclose_identity", "True")
     cfg.set("twtxt", "limit_timeline", "50")
     cfg.set("twtxt", "timeout", "1.0")
     cfg.set("twtxt", "sorting", "ascending")
@@ -49,6 +50,7 @@ def test_defaults():
     assert empty_conf.use_cache is True
     assert empty_conf.porcelain is False
     assert empty_conf.character_limit is None
+    assert empty_conf.disclose_identity is False
     assert empty_conf.limit_timeline == 20
     assert empty_conf.timeout == 5.0
     assert empty_conf.sorting == "descending"
@@ -65,6 +67,7 @@ def check_cfg(cfg):
     assert cfg.use_cache is False
     assert cfg.porcelain is True
     assert cfg.character_limit == 150
+    assert cfg.disclose_identity is True
     assert cfg.limit_timeline == 50
     assert cfg.timeout == 1.0
     assert cfg.sorting == "ascending"
@@ -95,14 +98,14 @@ def test_discover():
 def test_create_config(config_dir):
     config_dir_old = Config.config_dir
     Config.config_dir = str(config_dir.join("new"))
-    conf_w = Config.create_config("bar", "batz.txt", True)
+    conf_w = Config.create_config("bar", "batz.txt", False, True)
     conf_r = Config.discover()
     assert conf_r.nick == "bar"
     assert conf_r.twtfile == "batz.txt"
     assert conf_r.character_limit == 140
     assert conf_r.following[0].nick == "twtxt"
     assert conf_r.following[0].url == "https://buckket.org/twtxt_news.txt"
-    assert set(conf_r.options.keys()) == {"nick", "twtfile", "character_limit"}
+    assert set(conf_r.options.keys()) == {"nick", "twtfile", "disclose_identity", "character_limit"}
 
     conf_r.cfg.remove_section("twtxt")
     assert conf_r.options == {}
