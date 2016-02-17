@@ -11,6 +11,11 @@ So you want to get some thoughts out on the internet in a convenient and slick w
 
 **tl;dr**: twtxt is a CLI tool, as well as a format specification for self-hosted flat file based microblogging.
 
+This version of twtxt can also consume Atom/RSS feeds due to `a ten-line patch <https://github.com/buckket/twtxt/pull/88>` that the original developer rejected as “bloat”. This enables users to follow existing microblogs, podcasts and news headlines.
+
+
+|podcast|
+
 Features
 --------
 
@@ -70,6 +75,10 @@ twtxt is released under the MIT License. See the bundled LICENSE file for detail
 .. |demo| image:: https://asciinema.org/a/1w2q3suhgrzh2hgltddvk9ot4.png
     :target: https://asciinema.org/a/1w2q3suhgrzh2hgltddvk9ot4
     :alt: Demo
+
+.. |podcast| image:: https://cloud.githubusercontent.com/assets/60905/13090773/00345f1c-d4f8-11e5-9247-273779b68480.png
+    :target: https://cloud.githubusercontent.com/assets/60905/13090773/00345f1c-d4f8-11e5-9247-273779b68480.png
+    :alt: WMR podcast feed displayed using twtxt2
 
 .. |docs| image:: https://readthedocs.org/projects/twtxt/badge/?version=latest
     :target: http://twtxt.readthedocs.org/en/latest/?badge=latest
