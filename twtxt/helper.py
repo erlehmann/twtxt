@@ -24,7 +24,7 @@ def style_timeline(tweets, porcelain=False):
     if porcelain:
         return "\n".join(style_tweet(tweet, porcelain) for tweet in tweets)
     else:
-        return "\n{0}\n".format("\n\n".join(style_tweet(tweet, porcelain) for tweet in tweets))
+        return "\n{0}\n".format("\n\n".join(filter(None, (style_tweet(tweet, porcelain) for tweet in tweets))))
 
 
 def style_tweet(tweet, porcelain=False):
@@ -37,13 +37,16 @@ def style_tweet(tweet, porcelain=False):
             url=tweet.source.url,
             tweet=str(tweet))
     else:
+        if sys.stdout.isatty() and not tweet.text.isprintable():
+            return None
         styled_text = format_mentions(tweet.text)
         len_styling = len(styled_text) - len(click.unstyle(styled_text))
         final_text = textwrap.shorten(styled_text, limit + len_styling) if limit else styled_text
+        timestamp = tweet.absolute_datetime if conf.use_abs_time else tweet.relative_datetime
         return "➤ {nick} ({time}):\n{tweet}".format(
             nick=click.style(tweet.source.nick, bold=True),
             tweet=final_text,
-            time=click.style(tweet.relative_datetime, dim=True))
+            time=click.style(timestamp, dim=True))
 
 
 def style_source(source, porcelain=False):
@@ -100,13 +103,32 @@ def validate_text(ctx, param, value):
         raise click.BadArgumentUsage("Text can’t be empty.")
 
 
+def validate_config_key(ctx, param, value):
+    """Validate a configuration key according to `section.item`."""
+    if not value:
+        return value
+
+    try:
+        section, item = value.split(".", 1)
+    except ValueError:
+        raise click.BadArgumentUsage("Given key does not contain a section name.")
+    else:
+        return section, item
+
+
 def run_pre_tweet_hook(hook, options):
     try:
         command = shlex.split(hook.format(**options))
     except KeyError:
         click.echo("✗ Invalid variables in pre_tweet_hook.")
-        return False
-    return not subprocess.call(command, shell=True, stdout=subprocess.PIPE)
+        raise click.Abort
+    try:
+        subprocess.check_output(command, shell=True, universal_newlines=True, stderr=subprocess.STDOUT)
+    except subprocess.CalledProcessError as e:
+        click.echo("✗ pre_tweet_hook returned {}.".format(e.returncode))
+        if e.output:
+            click.echo(e.output)
+        raise click.Abort
 
 
 def run_post_tweet_hook(hook, options):
@@ -114,8 +136,13 @@ def run_post_tweet_hook(hook, options):
         command = shlex.split(hook.format(**options))
     except KeyError:
         click.echo("✗ Invalid variables in post_tweet_hook.")
-        return False
-    return not subprocess.call(command, shell=True, stdout=subprocess.PIPE)
+        return
+    try:
+        subprocess.check_output(command, shell=True, universal_newlines=True, stderr=subprocess.STDOUT)
+    except subprocess.CalledProcessError as e:
+        click.echo("✗ post_tweet_hook returned {}.".format(e.returncode))
+        if e.output:
+            click.echo(e.output)
 
 
 def sort_and_truncate_tweets(tweets, direction, limit):
